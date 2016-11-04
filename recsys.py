@@ -28,13 +28,14 @@ def load_data():
   average_rating /= count
   return user_dict_list, average_rating
 
-#Takes train set, test set, current user ID, and returns 1nn and his ratings for the common test set movies.
-def find_nearest_neighbor(user_dict_list,current_user,train_set,test_set):
+#Generates predictions on test_set using k nearest neighbors
+def find_k_nearest_neighbor(user_dict_list,current_user,train_set,test_set,average_rating):
 
   #index in list is user_id - 1
   current_user -=1 
   
   nearest_neighbor_dict = {movie: [] for movie in test_set}
+  super_dict = {movie: {} for movie in test_set}
   dict_of_euclidean_distances = {}
 
   for i in range(len(user_dict_list)):
@@ -52,29 +53,40 @@ def find_nearest_neighbor(user_dict_list,current_user,train_set,test_set):
           nearest_neighbor_dict[movie].append(i)
 
       #add to dict of euclidean distances if at least 3 movies from train_set common
-      if common_train > 1:
+      if common_train > 3:
         euclidean_distance /= common_train
         dict_of_euclidean_distances[i] = euclidean_distance
       else: dict_of_euclidean_distances[i] = float('inf')
 
-  nearest_neighbor_final = {}
-  #find nearest neighbor for each movie in test_set
-  for movie in test_set:
-    best_euclidean_distance = float('inf')
-    if len(nearest_neighbor_dict[movie]) > 0:
-      for user in nearest_neighbor_dict[movie]:
-        if dict_of_euclidean_distances[user] < best_euclidean_distance:
-          nearest_neighbor_final[movie] = user
-          best_euclidean_distance = dict_of_euclidean_distances[user]
-    #nobody has seen this movie in test_set
-    else:
-      nearest_neighbor_final[movie] = -1
+  #combine nearest_neighbor_dict and dict_of_euclidean_distances into a dict of dicts. The key of the top-level dict is the movie_id,
+  #its value is a dict comprising of users as keys and euclidean distances as values, where the key corresponding to the user is only
+  #present in the dict of the user has rated the movie corresponding to the key of the top-level dict.
 
-  #return indices of nearest neighbors for each movie in test_set
-  for movie in nearest_neighbor_final.keys():
-    user = nearest_neighbor_final[movie]
+  for movie in nearest_neighbor_dict:
+    for user in nearest_neighbor_dict[movie]:
+      super_dict[movie][user] = dict_of_euclidean_distances[user]
 
-  return nearest_neighbor_final
+  for movie in super_dict:
+    while(len(super_dict[movie]) > 3):
+      key_to_delete = max(super_dict[movie], key=lambda k: super_dict[movie][k])
+      del super_dict[movie][key_to_delete]
+
+  #get average predicted ratings
+  predicted_ratings = {}
+  for movie in super_dict:
+    average = 0
+    count = 0
+    for user in super_dict[movie]:
+      average+= user_dict_list[user][movie]
+      count +=1
+    if count > 0:
+      average /= count
+    #no such users
+    else: average = average_rating
+    predicted_ratings[movie] = average
+
+  # print(predicted_ratings)
+  return predicted_ratings
 
 #splits the user's ratings into 70-30 train and test set
 def train_test_split(user_dict_list,current_user):
@@ -93,12 +105,12 @@ def train_test_split(user_dict_list,current_user):
     count+=1
   return train, test
 
-def find_mean_squared_error(user_dict_list,nearest_neighbor_dict, test_set, average_rating):
+def find_mean_squared_error(user_dict_list,predicted_ratings, test_set, average_rating):
   sum_of_squares = 0
   count = 0
   for movie in test_set:
-    if movie in nearest_neighbor_dict and nearest_neighbor_dict[movie] != -1:
-      predicted_rating = user_dict_list[nearest_neighbor_dict[movie]][movie]
+    if movie in predicted_ratings:
+      predicted_rating = predicted_ratings[movie]
     #movie not seen by anyone else, arbitrary rating  
     else:
       predicted_rating = average_rating
@@ -131,21 +143,23 @@ def main():
     train_set, test_set = train_test_split(user_dict_list,user_id)
 
     #Find a list of nearest_neighbors such that we have a nearest_neighbor for each movie in test_set
-    nearest_neighbor_dict = find_nearest_neighbor(user_dict_list, user_id, train_set, test_set)
+    predicted_ratings = find_k_nearest_neighbor(user_dict_list, user_id, train_set, test_set,average_rating)
 
     #check squared error with predictions made by nearest neighbors on test_set movies
-    mean_squared_error = find_mean_squared_error(user_dict_list, nearest_neighbor_dict, test_set, average_rating)
-    # print("Mean squared error = " + str(mean_squared_error))
+    mean_squared_error = find_mean_squared_error(user_dict_list, predicted_ratings, test_set, average_rating)
+    print("Mean squared error = " + str(mean_squared_error))
 
     #now do a comparison against using the mean as prediction for all movies in the test_set
     squared_error_without_nn = find_squared_error_without_nn(test_set,average_rating)
-    # print("Mean squared error without using NN is " + str(squared_error_without_nn))
+    print("Mean squared error without using NN is " + str(squared_error_without_nn))
 
     if squared_error_without_nn > mean_squared_error:
       win+=1
     else: loss +=1
   win_percentage = ((win)/float(win+loss))*100
   print("Win percentage = "+ str(win_percentage))
+
+  #use 3 nearest neighbors rather than a single neighbor to predict.
 
 if __name__ == "__main__":
   main()
