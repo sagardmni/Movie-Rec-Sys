@@ -61,11 +61,9 @@ def find_nearest_neighbor(user_dict_list,current_user,train_set,test_set):
       nearest_neighbor_final[movie] = -1
 
   #return indices of nearest neighbors for each movie in test_set
-  print(nearest_neighbor_final)
   for movie in nearest_neighbor_final.keys():
     user = nearest_neighbor_final[movie]
-    print("User: " + str(user))
-    print("Distance: " + str(dict_of_euclidean_distances[user]))
+
   return nearest_neighbor_final
 
 #splits the user's ratings into 70-30 train and test set
@@ -102,28 +100,43 @@ def find_mean_squared_error(user_dict_list,nearest_neighbor_dict, test_set):
   mean_squared_error = sum_of_squares/float(count)
   return mean_squared_error
 
+def find_squared_error_without_nn(test_set):
+  sum_of_squares = 0
+  count = 0
+  for movie in test_set:
+    predicted_rating = 2.5
+    sum_of_squares += (predicted_rating - test_set[movie])**2
+    count+=1
+  mean_squared_error = sum_of_squares/float(count)
+  return mean_squared_error
 
 def main():
-
-  if len(sys.argv) != 2:
-    print("The program takes exactly one user ID as argument")
-    return
 
   #get list of user dicts mapping movie_ids to ratings
   user_dict_list = load_data()
 
-  #take user_id is input and output the predictions on some subset of his ratings, and the error rate on the same
-  user_id = int(sys.argv[1])
+  win = 0
+  loss = 0
+  for user_id in range(1,672):
+    #split ID 1's movies into train and test set (each of train and test will be a dict with some movies and their ratings)
+    train_set, test_set = train_test_split(user_dict_list,user_id)
 
-  #split ID 1's movies into train and test set (each of train and test will be a dict with some movies and their ratings)
-  train_set, test_set = train_test_split(user_dict_list,user_id)
+    #Find a list of nearest_neighbors such that we have a nearest_neighbor for each movie in test_set
+    nearest_neighbor_dict = find_nearest_neighbor(user_dict_list, user_id, train_set, test_set)
 
-  #Find a list of nearest_neighbors such that we have a nearest_neighbor for each movie in test_set
-  nearest_neighbor_dict = find_nearest_neighbor(user_dict_list, user_id, train_set, test_set)
+    #check squared error with predictions made by nearest neighbors on test_set movies
+    mean_squared_error = find_mean_squared_error(user_dict_list, nearest_neighbor_dict, test_set)
+    print("Mean squared error = " + str(mean_squared_error))
 
-  #check squared error with predictions made by nearest neighbors on test_set movies
-  mean_squared_error = find_mean_squared_error(user_dict_list, nearest_neighbor_dict, test_set)
-  print("Mean squared error = " + str(mean_squared_error))
+    #now do a comparison against using the mean as prediction for all movies in the test_set
+    squared_error_without_nn = find_squared_error_without_nn(test_set)
+    print("Mean squared error without using NN is " + str(squared_error_without_nn))
+
+    if squared_error_without_nn > mean_squared_error:
+      win+=1
+    else: loss +=1
+  win_percentage = ((win)/float(win+loss))*100
+  print("Win percentage = "+ str(win_percentage))
 
 if __name__ == "__main__":
   main()
