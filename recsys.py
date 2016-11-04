@@ -6,6 +6,8 @@ import sys
 def load_data():
   user_dict_list = []
   average_rating = 0
+  count = 0
+
   with open('ratings.csv', 'rb') as movie_ratings_file:
     reader = csv.reader(movie_ratings_file, delimiter=',')
     next(reader, None)  # skip the headers
@@ -20,8 +22,11 @@ def load_data():
         user_dict_list.append(user_dict)
         user_dict = {}
         user_dict[int(row[1])]=float(row[2])
+      average_rating += float(row[2])
+      count+=1
     user_dict_list.append(user_dict)
-  return user_dict_list
+  average_rating /= count
+  return user_dict_list, average_rating
 
 #Takes train set, test set, current user ID, and returns 1nn and his ratings for the common test set movies.
 def find_nearest_neighbor(user_dict_list,current_user,train_set,test_set):
@@ -104,11 +109,11 @@ def find_mean_squared_error(user_dict_list,nearest_neighbor_dict, test_set):
   mean_squared_error = sum_of_squares/float(count)
   return mean_squared_error
 
-def find_squared_error_without_nn(test_set):
+def find_squared_error_without_nn(test_set,average_rating):
   sum_of_squares = 0
   count = 0
   for movie in test_set:
-    predicted_rating = 2.5
+    predicted_rating = average_rating
     sum_of_squares += (predicted_rating - test_set[movie])**2
     count+=1
   mean_squared_error = sum_of_squares/float(count)
@@ -117,7 +122,7 @@ def find_squared_error_without_nn(test_set):
 def main():
 
   #get list of user dicts mapping movie_ids to ratings
-  user_dict_list = load_data()
+  user_dict_list, average_rating = load_data()
 
   win = 0
   loss = 0
@@ -133,7 +138,7 @@ def main():
     # print("Mean squared error = " + str(mean_squared_error))
 
     #now do a comparison against using the mean as prediction for all movies in the test_set
-    squared_error_without_nn = find_squared_error_without_nn(test_set)
+    squared_error_without_nn = find_squared_error_without_nn(test_set,average_rating)
     # print("Mean squared error without using NN is " + str(squared_error_without_nn))
 
     if squared_error_without_nn > mean_squared_error:
