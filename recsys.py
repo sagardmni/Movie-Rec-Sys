@@ -5,17 +5,22 @@ import sys
 #creates a list of dicts, one dict for each user, with movie_id as key and rating as value
 def load_data():
   user_dict_list = []
+  average_rating = 0
   with open('ratings.csv', 'rb') as movie_ratings_file:
     reader = csv.reader(movie_ratings_file, delimiter=',')
-    for count in range(1,672):
-      user_dict={}
-      next(reader, None)  # skip the headers
-      for row in reader:
-        if(int(row[0])==count):
-          user_dict[int(row[1])]=float(row[2])
-      count+=1
-      user_dict_list.append(user_dict)
-      movie_ratings_file.seek(0)
+    next(reader, None)  # skip the headers
+
+    previous = 1
+    user_dict = {}
+    for row in reader:
+      if(int(row[0])==previous):
+        user_dict[int(row[1])]=float(row[2])
+      else:
+        previous = int(row[0])
+        user_dict_list.append(user_dict)
+        user_dict = {}
+        user_dict[int(row[1])]=float(row[2])
+    user_dict_list.append(user_dict)
   return user_dict_list
 
 #Takes train set, test set, current user ID, and returns 1nn and his ratings for the common test set movies.
@@ -86,15 +91,14 @@ def train_test_split(user_dict_list,current_user):
 def find_mean_squared_error(user_dict_list,nearest_neighbor_dict, test_set):
   sum_of_squares = 0
   count = 0
-  print("Predictions using this neighbor for test set are: ")
   for movie in test_set:
     if movie in nearest_neighbor_dict and nearest_neighbor_dict[movie] != -1:
       predicted_rating = user_dict_list[nearest_neighbor_dict[movie]][movie]
     #movie not seen by anyone else, arbitrary rating  
     else:
       predicted_rating = 2.5
-    print("Predicted rating for movie " + str(movie) + ": "+str(predicted_rating))
-    print("Actual rating for movie " + str(movie) + ": "+str(test_set[movie]))
+    # print("Predicted rating for movie " + str(movie) + ": "+str(predicted_rating))
+    # print("Actual rating for movie " + str(movie) + ": "+str(test_set[movie]))
     sum_of_squares += (predicted_rating - test_set[movie])**2
     count +=1
   mean_squared_error = sum_of_squares/float(count)
@@ -126,11 +130,11 @@ def main():
 
     #check squared error with predictions made by nearest neighbors on test_set movies
     mean_squared_error = find_mean_squared_error(user_dict_list, nearest_neighbor_dict, test_set)
-    print("Mean squared error = " + str(mean_squared_error))
+    # print("Mean squared error = " + str(mean_squared_error))
 
     #now do a comparison against using the mean as prediction for all movies in the test_set
     squared_error_without_nn = find_squared_error_without_nn(test_set)
-    print("Mean squared error without using NN is " + str(squared_error_without_nn))
+    # print("Mean squared error without using NN is " + str(squared_error_without_nn))
 
     if squared_error_without_nn > mean_squared_error:
       win+=1
