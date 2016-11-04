@@ -52,7 +52,7 @@ def find_nearest_neighbor(user_dict_list,current_user,train_set,test_set):
           nearest_neighbor_dict[movie].append(i)
 
       #add to dict of euclidean distances if at least 3 movies from train_set common
-      if common_train > 3:
+      if common_train > 1:
         euclidean_distance /= common_train
         dict_of_euclidean_distances[i] = euclidean_distance
       else: dict_of_euclidean_distances[i] = float('inf')
@@ -93,7 +93,7 @@ def train_test_split(user_dict_list,current_user):
     count+=1
   return train, test
 
-def find_mean_squared_error(user_dict_list,nearest_neighbor_dict, test_set):
+def find_mean_squared_error(user_dict_list,nearest_neighbor_dict, test_set, average_rating):
   sum_of_squares = 0
   count = 0
   for movie in test_set:
@@ -101,7 +101,7 @@ def find_mean_squared_error(user_dict_list,nearest_neighbor_dict, test_set):
       predicted_rating = user_dict_list[nearest_neighbor_dict[movie]][movie]
     #movie not seen by anyone else, arbitrary rating  
     else:
-      predicted_rating = 2.5
+      predicted_rating = average_rating
     # print("Predicted rating for movie " + str(movie) + ": "+str(predicted_rating))
     # print("Actual rating for movie " + str(movie) + ": "+str(test_set[movie]))
     sum_of_squares += (predicted_rating - test_set[movie])**2
@@ -134,7 +134,7 @@ def main():
     nearest_neighbor_dict = find_nearest_neighbor(user_dict_list, user_id, train_set, test_set)
 
     #check squared error with predictions made by nearest neighbors on test_set movies
-    mean_squared_error = find_mean_squared_error(user_dict_list, nearest_neighbor_dict, test_set)
+    mean_squared_error = find_mean_squared_error(user_dict_list, nearest_neighbor_dict, test_set, average_rating)
     # print("Mean squared error = " + str(mean_squared_error))
 
     #now do a comparison against using the mean as prediction for all movies in the test_set
