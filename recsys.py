@@ -29,7 +29,7 @@ def load_data():
   return user_dict_list, average_rating
 
 #Generates predictions on test_set using k nearest neighbors
-def find_k_nearest_neighbor(user_dict_list,current_user,train_set,test_set,average_rating):
+def find_k_nearest_neighbor(user_dict_list,current_user,train_set,test_set,average_rating, k_for_knn):
 
   #index in list is user_id - 1
   current_user -=1 
@@ -53,7 +53,7 @@ def find_k_nearest_neighbor(user_dict_list,current_user,train_set,test_set,avera
           nearest_neighbor_dict[movie].append(i)
 
       #add to dict of euclidean distances if at least 3 movies from train_set common
-      if common_train > 3:
+      if common_train > 2:
         euclidean_distance /= common_train
         dict_of_euclidean_distances[i] = euclidean_distance
       else: dict_of_euclidean_distances[i] = float('inf')
@@ -67,7 +67,7 @@ def find_k_nearest_neighbor(user_dict_list,current_user,train_set,test_set,avera
       super_dict[movie][user] = dict_of_euclidean_distances[user]
 
   for movie in super_dict:
-    while(len(super_dict[movie]) > 3):
+    while(len(super_dict[movie]) > k_for_knn):
       key_to_delete = max(super_dict[movie], key=lambda k: super_dict[movie][k])
       del super_dict[movie][key_to_delete]
 
@@ -143,7 +143,7 @@ def main():
     train_set, test_set = train_test_split(user_dict_list,user_id)
 
     #Find a list of nearest_neighbors such that we have a nearest_neighbor for each movie in test_set
-    predicted_ratings = find_k_nearest_neighbor(user_dict_list, user_id, train_set, test_set,average_rating)
+    predicted_ratings = find_k_nearest_neighbor(user_dict_list, user_id, train_set, test_set,average_rating,10)
 
     #check squared error with predictions made by nearest neighbors on test_set movies
     mean_squared_error = find_mean_squared_error(user_dict_list, predicted_ratings, test_set, average_rating)
@@ -158,8 +158,6 @@ def main():
     else: loss +=1
   win_percentage = ((win)/float(win+loss))*100
   print("Win percentage = "+ str(win_percentage))
-
-  #use 3 nearest neighbors rather than a single neighbor to predict.
 
 if __name__ == "__main__":
   main()
