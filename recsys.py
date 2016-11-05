@@ -28,67 +28,6 @@ def load_data():
   average_rating /= count
   return user_dict_list, average_rating
 
-# #Generates predictions on test_set using k nearest neighbors
-# def find_k_nearest_neighbor(user_dict_list,current_user,train_set,test_set,average_rating, k_for_knn):
-
-#   #index in list is user_id - 1
-#   current_user -=1 
-  
-#   nearest_neighbor_dict = {movie: [] for movie in test_set}
-#   super_dict = {movie: {} for movie in test_set}
-#   dict_of_euclidean_distances = {}
-
-#   for i in range(len(user_dict_list)):
-#     #if not same as current user, calculate euclidean distance
-#     if i!=current_user:
-#       euclidean_distance = 0
-#       common_train = 0
-#       for movie in user_dict_list[i]:
-#         #if both have rated the same movie
-#         if movie in train_set:
-#           euclidean_distance+= math.sqrt((user_dict_list[i][movie] - user_dict_list[current_user][movie])**2)
-#           common_train+=1
-#         #check if movie is in test_set of current_user
-#         elif movie in test_set:
-#           nearest_neighbor_dict[movie].append(i)
-
-#       #add to dict of euclidean distances if at least 3 movies from train_set common
-#       if common_train > 2:
-#         euclidean_distance /= common_train
-#         dict_of_euclidean_distances[i] = euclidean_distance
-#       else: dict_of_euclidean_distances[i] = float('inf')
-
-#   #combine nearest_neighbor_dict and dict_of_euclidean_distances into a dict of dicts. The key of the top-level dict is the movie_id,
-#   #its value is a dict comprising of users as keys and euclidean distances as values, where the key corresponding to the user is only
-#   #present in the dict of the user has rated the movie corresponding to the key of the top-level dict.
-
-#   for movie in nearest_neighbor_dict:
-#     for user in nearest_neighbor_dict[movie]:
-#       super_dict[movie][user] = dict_of_euclidean_distances[user]
-
-#   for movie in super_dict:
-#     while(len(super_dict[movie]) > k_for_knn):
-#       key_to_delete = max(super_dict[movie], key=lambda k: super_dict[movie][k])
-#       del super_dict[movie][key_to_delete]
-
-#   #get average predicted ratings
-#   predicted_ratings = {}
-#   for movie in super_dict:
-#     average = 0
-#     count = 0
-#     for user in super_dict[movie]:
-#       average+= user_dict_list[user][movie]
-#       count +=1
-#     if count > 0:
-#       average /= count
-#     #no such users
-#     else: average = average_rating
-#     predicted_ratings[movie] = average
-
-#   # print(predicted_ratings)
-#   return predicted_ratings
-
-
 #Generates predictions on validation_dict_list using k nearest neighbors with train_dict_list
 def find_k_nearest_neighbor(train_dict_list, validation_dict_list,average_rating,k_for_knn):
   predicted_ratings_dict = {}
