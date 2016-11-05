@@ -190,22 +190,6 @@ def train_validation_test_split(user_dict_list):
     test_dict_list.append(test)
   return train_dict_list, validation_dict_list, test_dict_list
 
-def find_mean_squared_error(user_dict_list,predicted_ratings, test_set, average_rating):
-  sum_of_squares = 0
-  count = 0
-  for movie in test_set:
-    if movie in predicted_ratings:
-      predicted_rating = predicted_ratings[movie]
-    #movie not seen by anyone else, use average rating  
-    else:
-      predicted_rating = average_rating
-    # print("Predicted rating for movie " + str(movie) + ": "+str(predicted_rating))
-    # print("Actual rating for movie " + str(movie) + ": "+str(test_set[movie]))
-    sum_of_squares += (predicted_rating - test_set[movie])**2
-    count +=1
-  mean_squared_error = sum_of_squares/float(count)
-  return mean_squared_error
-
 def find_mean_squared_error(validation_dict_list, predicted_ratings_dict, average_rating):
   sum_of_squares = 0
   count = 0
@@ -222,7 +206,7 @@ def find_mean_squared_error(validation_dict_list, predicted_ratings_dict, averag
       # print("Actual rating for movie " + str(movie) + ": "+str(test_set[movie]))
       sum_of_squares += (predicted_rating - validation_set[movie])**2
       count +=1
-  mean_squared_error = sum_of_squares/float(count)
+  mean_squared_error = math.sqrt(sum_of_squares/float(count))
   return mean_squared_error
 
 def find_squared_error_without_nn(validation_dict_list,average_rating):
@@ -234,7 +218,7 @@ def find_squared_error_without_nn(validation_dict_list,average_rating):
       predicted_rating = average_rating
       sum_of_squares += (predicted_rating - validation_set[movie])**2
       count+=1
-  mean_squared_error = sum_of_squares/float(count)
+  mean_squared_error = math.sqrt(sum_of_squares/float(count))
   return mean_squared_error
 
 def main():
@@ -248,14 +232,13 @@ def main():
   predicted_ratings_dict = {}
   
   squared_error_without_nn = find_squared_error_without_nn(validation_dict_list,average_rating)
-  print("Mean squared error without using NN is " + str(squared_error_without_nn))
+  print("RMSE without using NN is " + str(squared_error_without_nn))
 
   for k in range(1,100):
-    print("k = "+str(k))
     predicted_ratings_dict = find_k_nearest_neighbor(train_dict_list, validation_dict_list,average_rating,k)
 
     mean_squared_error = find_mean_squared_error(validation_dict_list, predicted_ratings_dict, average_rating)
-    print("Mean squared error = " + str(mean_squared_error))
+    print("RMSE with k= " + str(k) + " is " +str(mean_squared_error))
 
     if mean_squared_error > previous_mean_squared_error:
       break
@@ -265,9 +248,9 @@ def main():
   k -=1
   predicted_ratings_dict = find_k_nearest_neighbor(train_dict_list, test_dict_list,average_rating,k)
   mean_squared_error = find_mean_squared_error(test_dict_list, predicted_ratings_dict, average_rating)
-  print("Mean squared error = " + str(mean_squared_error))
+  print("RMSE = " + str(mean_squared_error))
   squared_error_without_nn = find_squared_error_without_nn(test_dict_list,average_rating)
-  print("Mean squared error without using NN is " + str(squared_error_without_nn))
+  print("RMSE without using kNN is " + str(squared_error_without_nn))
   percentage_improvement = ((squared_error_without_nn -mean_squared_error)/float(squared_error_without_nn))*100
   print("Percentage improvement: "+str(percentage_improvement))
 
