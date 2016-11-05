@@ -28,65 +28,124 @@ def load_data():
   average_rating /= count
   return user_dict_list, average_rating
 
-#Generates predictions on test_set using k nearest neighbors
-def find_k_nearest_neighbor(user_dict_list,current_user,train_set,test_set,average_rating, k_for_knn):
+# #Generates predictions on test_set using k nearest neighbors
+# def find_k_nearest_neighbor(user_dict_list,current_user,train_set,test_set,average_rating, k_for_knn):
 
-  #index in list is user_id - 1
-  current_user -=1 
+#   #index in list is user_id - 1
+#   current_user -=1 
   
-  nearest_neighbor_dict = {movie: [] for movie in test_set}
-  super_dict = {movie: {} for movie in test_set}
-  dict_of_euclidean_distances = {}
+#   nearest_neighbor_dict = {movie: [] for movie in test_set}
+#   super_dict = {movie: {} for movie in test_set}
+#   dict_of_euclidean_distances = {}
 
-  for i in range(len(user_dict_list)):
-    #if not same as current user, calculate euclidean distance
-    if i!=current_user:
-      euclidean_distance = 0
-      common_train = 0
-      for movie in user_dict_list[i]:
-        #if both have rated the same movie
-        if movie in train_set:
-          euclidean_distance+= math.sqrt((user_dict_list[i][movie] - user_dict_list[current_user][movie])**2)
-          common_train+=1
-        #check if movie is in test_set of current_user
-        elif movie in test_set:
-          nearest_neighbor_dict[movie].append(i)
+#   for i in range(len(user_dict_list)):
+#     #if not same as current user, calculate euclidean distance
+#     if i!=current_user:
+#       euclidean_distance = 0
+#       common_train = 0
+#       for movie in user_dict_list[i]:
+#         #if both have rated the same movie
+#         if movie in train_set:
+#           euclidean_distance+= math.sqrt((user_dict_list[i][movie] - user_dict_list[current_user][movie])**2)
+#           common_train+=1
+#         #check if movie is in test_set of current_user
+#         elif movie in test_set:
+#           nearest_neighbor_dict[movie].append(i)
 
-      #add to dict of euclidean distances if at least 3 movies from train_set common
-      if common_train > 2:
-        euclidean_distance /= common_train
-        dict_of_euclidean_distances[i] = euclidean_distance
-      else: dict_of_euclidean_distances[i] = float('inf')
+#       #add to dict of euclidean distances if at least 3 movies from train_set common
+#       if common_train > 2:
+#         euclidean_distance /= common_train
+#         dict_of_euclidean_distances[i] = euclidean_distance
+#       else: dict_of_euclidean_distances[i] = float('inf')
 
-  #combine nearest_neighbor_dict and dict_of_euclidean_distances into a dict of dicts. The key of the top-level dict is the movie_id,
-  #its value is a dict comprising of users as keys and euclidean distances as values, where the key corresponding to the user is only
-  #present in the dict of the user has rated the movie corresponding to the key of the top-level dict.
+#   #combine nearest_neighbor_dict and dict_of_euclidean_distances into a dict of dicts. The key of the top-level dict is the movie_id,
+#   #its value is a dict comprising of users as keys and euclidean distances as values, where the key corresponding to the user is only
+#   #present in the dict of the user has rated the movie corresponding to the key of the top-level dict.
 
-  for movie in nearest_neighbor_dict:
-    for user in nearest_neighbor_dict[movie]:
-      super_dict[movie][user] = dict_of_euclidean_distances[user]
+#   for movie in nearest_neighbor_dict:
+#     for user in nearest_neighbor_dict[movie]:
+#       super_dict[movie][user] = dict_of_euclidean_distances[user]
 
-  for movie in super_dict:
-    while(len(super_dict[movie]) > k_for_knn):
-      key_to_delete = max(super_dict[movie], key=lambda k: super_dict[movie][k])
-      del super_dict[movie][key_to_delete]
+#   for movie in super_dict:
+#     while(len(super_dict[movie]) > k_for_knn):
+#       key_to_delete = max(super_dict[movie], key=lambda k: super_dict[movie][k])
+#       del super_dict[movie][key_to_delete]
 
-  #get average predicted ratings
-  predicted_ratings = {}
-  for movie in super_dict:
-    average = 0
-    count = 0
-    for user in super_dict[movie]:
-      average+= user_dict_list[user][movie]
-      count +=1
-    if count > 0:
-      average /= count
-    #no such users
-    else: average = average_rating
-    predicted_ratings[movie] = average
+#   #get average predicted ratings
+#   predicted_ratings = {}
+#   for movie in super_dict:
+#     average = 0
+#     count = 0
+#     for user in super_dict[movie]:
+#       average+= user_dict_list[user][movie]
+#       count +=1
+#     if count > 0:
+#       average /= count
+#     #no such users
+#     else: average = average_rating
+#     predicted_ratings[movie] = average
 
-  # print(predicted_ratings)
-  return predicted_ratings
+#   # print(predicted_ratings)
+#   return predicted_ratings
+
+
+#Generates predictions on validation_dict_list using k nearest neighbors with train_dict_list
+def find_k_nearest_neighbor(train_dict_list, validation_dict_list,average_rating,k_for_knn):
+  predicted_ratings_dict = {}
+  for current_user in range(671):
+    train_set = train_dict_list[current_user]
+    validation_set = validation_dict_list[current_user]
+
+    nearest_neighbor_dict = {movie: [] for movie in validation_set}
+    super_dict = {movie: {} for movie in validation_set}
+    dict_of_euclidean_distances = {}
+
+    for user in range(len(train_dict_list)):
+      if user!= current_user:
+        common_train = 0
+        euclidean_distance = 0
+        for movie in train_dict_list[user]:
+          if movie in train_dict_list[current_user]:
+            euclidean_distance+= math.sqrt((train_dict_list[user][movie] - train_dict_list[current_user][movie])**2)
+            common_train+=1
+          if movie in validation_set:
+            nearest_neighbor_dict[movie].append(user)
+        #add to dict of euclidean distances if at least 3 movies from train_set common
+        if common_train > 2:
+          euclidean_distance /= common_train
+          dict_of_euclidean_distances[user] = euclidean_distance
+        else: dict_of_euclidean_distances[user] = float('inf')
+
+    #combine nearest_neighbor_dict and dict_of_euclidean_distances into a dict of dicts. The key of the top-level dict is the movie_id,
+    #its value is a dict comprising of users as keys and euclidean distances as values, where the key corresponding to the user is only
+    #present in the dict of the user has rated the movie corresponding to the key of the top-level dict.
+
+    for movie in nearest_neighbor_dict:
+      for user in nearest_neighbor_dict[movie]:
+        super_dict[movie][user] = dict_of_euclidean_distances[user]
+
+    for movie in super_dict:
+      while(len(super_dict[movie]) > k_for_knn):
+        key_to_delete = max(super_dict[movie], key=lambda k: super_dict[movie][k])
+        del super_dict[movie][key_to_delete]
+
+    #get average predicted ratings
+    predicted_ratings = {}
+    for movie in super_dict:
+      average = 0
+      count = 0
+      for user in super_dict[movie]:
+        average+= train_dict_list[user][movie]
+        count +=1
+      if count > 0:
+        average /= count
+      #no such users
+      else: average = average_rating
+      predicted_ratings[movie] = average
+    predicted_ratings_dict[current_user] = predicted_ratings
+    # print(predicted_ratings)
+
+  return predicted_ratings_dict
 
 #splits the user's ratings into 70-30 train and test set
 def train_test_split(user_dict_list,current_user):
@@ -105,13 +164,39 @@ def train_test_split(user_dict_list,current_user):
     count+=1
   return train, test
 
+#splits the user's ratings into 60-20-20 train-validation-test set
+def train_validation_test_split(user_dict_list):
+  train_dict_list = []
+  validation_dict_list = []
+  test_dict_list = []
+  for current_user in range(671):
+    train = {}
+    validation = {}
+    test = {}
+    train_end_index = math.floor(0.6*len(user_dict_list[current_user]))
+    validation_end_index = math.floor(0.8*len(user_dict_list[current_user]))
+    count = 0
+    current_user_dict = user_dict_list[current_user] 
+    for key in current_user_dict:
+      if count < train_end_index:
+        train[key] = current_user_dict[key]
+      elif count < validation_end_index:
+        validation[key] = current_user_dict[key]
+      else:
+        test[key] = current_user_dict[key]
+      count+=1
+    train_dict_list.append(train)
+    validation_dict_list.append(validation)
+    test_dict_list.append(test)
+  return train_dict_list, validation_dict_list, test_dict_list
+
 def find_mean_squared_error(user_dict_list,predicted_ratings, test_set, average_rating):
   sum_of_squares = 0
   count = 0
   for movie in test_set:
     if movie in predicted_ratings:
       predicted_rating = predicted_ratings[movie]
-    #movie not seen by anyone else, arbitrary rating  
+    #movie not seen by anyone else, use average rating  
     else:
       predicted_rating = average_rating
     # print("Predicted rating for movie " + str(movie) + ": "+str(predicted_rating))
@@ -121,13 +206,34 @@ def find_mean_squared_error(user_dict_list,predicted_ratings, test_set, average_
   mean_squared_error = sum_of_squares/float(count)
   return mean_squared_error
 
-def find_squared_error_without_nn(test_set,average_rating):
+def find_mean_squared_error(validation_dict_list, predicted_ratings_dict, average_rating):
   sum_of_squares = 0
   count = 0
-  for movie in test_set:
-    predicted_rating = average_rating
-    sum_of_squares += (predicted_rating - test_set[movie])**2
-    count+=1
+  for user in range(len(validation_dict_list)):
+    validation_set = validation_dict_list[user]
+    predicted_ratings = predicted_ratings_dict[user]
+    for movie in validation_set:
+      if movie in predicted_ratings:
+        predicted_rating = predicted_ratings[movie]
+      #movie not seen by anyone else, use average rating  
+      else:
+        predicted_rating = average_rating
+      # print("Predicted rating for movie " + str(movie) + ": "+str(predicted_rating))
+      # print("Actual rating for movie " + str(movie) + ": "+str(test_set[movie]))
+      sum_of_squares += (predicted_rating - validation_set[movie])**2
+      count +=1
+  mean_squared_error = sum_of_squares/float(count)
+  return mean_squared_error
+
+def find_squared_error_without_nn(validation_dict_list,average_rating):
+  sum_of_squares = 0
+  count = 0
+  for user in range(len(validation_dict_list)):
+    validation_set = validation_dict_list[user]
+    for movie in validation_set:
+      predicted_rating = average_rating
+      sum_of_squares += (predicted_rating - validation_set[movie])**2
+      count+=1
   mean_squared_error = sum_of_squares/float(count)
   return mean_squared_error
 
@@ -136,28 +242,34 @@ def main():
   #get list of user dicts mapping movie_ids to ratings
   user_dict_list, average_rating = load_data()
 
-  win = 0
-  loss = 0
-  for user_id in range(1,672):
-    #split ID 1's movies into train and test set (each of train and test will be a dict with some movies and their ratings)
-    train_set, test_set = train_test_split(user_dict_list,user_id)
+  #split entire set at once rather than splitting on each user
+  train_dict_list, validation_dict_list, test_dict_list = train_validation_test_split(user_dict_list)
+  previous_mean_squared_error = float('inf')
+  predicted_ratings_dict = {}
+  
+  squared_error_without_nn = find_squared_error_without_nn(validation_dict_list,average_rating)
+  print("Mean squared error without using NN is " + str(squared_error_without_nn))
 
-    #Find a list of nearest_neighbors such that we have a nearest_neighbor for each movie in test_set
-    predicted_ratings = find_k_nearest_neighbor(user_dict_list, user_id, train_set, test_set,average_rating,10)
+  for k in range(1,100):
+    print("k = "+str(k))
+    predicted_ratings_dict = find_k_nearest_neighbor(train_dict_list, validation_dict_list,average_rating,k)
 
-    #check squared error with predictions made by nearest neighbors on test_set movies
-    mean_squared_error = find_mean_squared_error(user_dict_list, predicted_ratings, test_set, average_rating)
+    mean_squared_error = find_mean_squared_error(validation_dict_list, predicted_ratings_dict, average_rating)
     print("Mean squared error = " + str(mean_squared_error))
 
-    #now do a comparison against using the mean as prediction for all movies in the test_set
-    squared_error_without_nn = find_squared_error_without_nn(test_set,average_rating)
-    print("Mean squared error without using NN is " + str(squared_error_without_nn))
-
-    if squared_error_without_nn > mean_squared_error:
-      win+=1
-    else: loss +=1
-  win_percentage = ((win)/float(win+loss))*100
-  print("Win percentage = "+ str(win_percentage))
+    if mean_squared_error > previous_mean_squared_error:
+      break
+    previous_mean_squared_error = mean_squared_error
+    
+  #check on test set using chosen k
+  k -=1
+  predicted_ratings_dict = find_k_nearest_neighbor(train_dict_list, test_dict_list,average_rating,k)
+  mean_squared_error = find_mean_squared_error(test_dict_list, predicted_ratings_dict, average_rating)
+  print("Mean squared error = " + str(mean_squared_error))
+  squared_error_without_nn = find_squared_error_without_nn(test_dict_list,average_rating)
+  print("Mean squared error without using NN is " + str(squared_error_without_nn))
+  percentage_improvement = ((squared_error_without_nn -mean_squared_error)/float(squared_error_without_nn))*100
+  print("Percentage improvement: "+str(percentage_improvement))
 
 if __name__ == "__main__":
   main()
